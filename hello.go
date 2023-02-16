@@ -1,53 +1,32 @@
 package main
 
 import (
-	"fmt"
 	"sync"
 )
 
 func main() {
+	var wgForLinks sync.WaitGroup
 	visitedURLs := make(map[string]bool)
 	var h1s []string
-	var wg sync.WaitGroup
-
-	urlCh := make(chan string)
 	h1Ch := make(chan string)
 
 	baseURL := "http://books.toscrape.com/"
 
 	doc := GetDocumentFrom(baseURL)
 
-	AddLinksFromDocumentUnique(doc, &visitedURLs)
+	wgForLinks.Add(1)
 
-	go func() {
-		for currentUrl := range visitedURLs {
-			wg.Add(1)
-			fmt.Println(fmt.Sprintf("%s%s", baseURL, currentUrl))
-			urlCh <- currentUrl
-			go worker(urlCh, h1Ch, &visitedURLs, h1s)
-		}
-	}()
+	// Is actually already the worker
+	// Next step: Extraction of H1s. Channel to collect H1s?
+	go ScrapeHTMLDocument(doc, &visitedURLs, baseURL, &wgForLinks, h1Ch)
 
-	for k := range visitedURLs {
-		if visitedURLs[k] == false {
-			// fmt.Printf("Checking %s\n", fmt.Sprintf("%s%s", baseURL, k))
-			doc = GetDocumentFrom(fmt.Sprintf("%s%s", baseURL, k))
-			AddLinksFromDocumentUnique(doc, &visitedURLs)
-			h1s = append(h1s, ExtractH1FromDocument(doc)...)
-			visitedURLs[k] = true
+	for {
+		newH1, open := <-h1Ch
+		h1s = append(h1s, newH1)
+		if !open {
+			break
 		}
 	}
 
-	fmt.Println("These are the extracted H1s")
-	for _, v := range h1s {
-		fmt.Printf("%s\n", v)
-	}
-
-}
-
-func worker(url <-chan string, h1s chan<- string, visitedURLs *map[string]bool, h1 []string) {
-	currentURL := <-url
-	fmt.Printf("Worker with %s\n", currentURL)
-	doc := GetDocumentFrom(currentURL)
-	AddLinksFromDocumentUnique(doc, *&visitedURLs)
+	wgForLinks.Wait()
 }

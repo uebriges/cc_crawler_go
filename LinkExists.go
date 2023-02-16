@@ -9,18 +9,13 @@ import (
 // in slice and returns true/false
 // ------------------------------------------------
 func LinkExists(mapOfLinks map[string]bool, newLink string) (exists bool) {
-	// Needed to prevent wrong links.
-	// Extension would need to keep track of "link level"
+	// Ignore some relative links
+	// Possible improvement would need to keep track of "link level"
 	if strings.Contains(newLink, "../") || strings.HasPrefix(newLink, "page-") || !strings.HasPrefix(newLink, "catalogue/") {
+		// fmt.Printf("Links ignored: %s\n", newLink)
 		exists = true
 		return
 	}
-	for k := range mapOfLinks {
-		if k == newLink {
-			exists = true
-		} else {
-			exists = false
-		}
-	}
+	_, exists = mapOfLinks[newLink]
 	return
 }
