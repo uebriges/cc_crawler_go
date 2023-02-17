@@ -13,7 +13,7 @@ import (
 // ------------------------------------------------
 // Loads and returns document from URL
 // ------------------------------------------------
-func GetDocumentFrom(url string) *goquery.Document {
+func GetDocumentFromURL(url string) *goquery.Document {
 	fmt.Printf("Getting doc from: %s\n", url)
 	res, err := http.Get(url)
 	if err != nil {
